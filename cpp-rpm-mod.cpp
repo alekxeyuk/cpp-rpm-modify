@@ -187,54 +187,54 @@ int main(int argc, char* argv[]) {
 		}
 
 
-		size_t new_offset = entry.offset + total_offset + align_offset;
+		entry.offset += total_offset + align_offset;
 		if (entry.tag == 1011) {
 			total_offset += off_delta_vendor;
-			strcpy_s(new_mem_arr + new_offset, new_vendor_size + 1, new_vendor.c_str());
+			strcpy_s(new_mem_arr + entry.offset, new_vendor_size + 1, new_vendor.c_str());
 		}
 		else if (entry.tag == 1015) {
 			total_offset += off_delta_packager;
-			strcpy_s(new_mem_arr + new_offset, new_packager_size + 1, new_packager.c_str());
+			strcpy_s(new_mem_arr + entry.offset, new_packager_size + 1, new_packager.c_str());
 		}
 		else {
 			if (entry.type == 7) { // BIN
-				memcpy(new_mem_arr + new_offset, mem_arr + old_offset, entry.count);
+				memcpy(new_mem_arr + entry.offset, mem_arr + old_offset, entry.count);
 			}
 			else if (entry.type == 8 || entry.type == 6 || entry.type == 9) { // STRING_ARRAY || STRING || I18NSTRING
 				size_t array_off = 0;
 				for (size_t i = 0; i < entry.count; i++) {
 					size_t string_size = strlen(mem_arr + old_offset + array_off) + 1;
-					strcpy_s(new_mem_arr + new_offset + array_off, string_size, mem_arr + old_offset + array_off);
+					strcpy_s(new_mem_arr + entry.offset + array_off, string_size, mem_arr + old_offset + array_off);
 					array_off += string_size;
 				}
 			}
 			else if (entry.type == 4) { // INT32
-				auto aligned = alignTo4Bytes(header_data_off + new_offset) - header_data_off;
-				if (aligned > new_offset) {
-					printf("[LAST OFFSET] = [%lld] [ALLIGNED OFFSET] = [%uld]\n", new_offset, aligned);
-					align_offset += aligned - new_offset;
-					new_offset += align_offset;
+				auto aligned = alignTo4Bytes(header_data_off + entry.offset) - header_data_off;
+				if (aligned > entry.offset) {
+					printf("[LAST OFFSET] = [%lld] [ALLIGNED OFFSET] = [%uld]\n", entry.offset, aligned);
+					align_offset += aligned - entry.offset;
+					entry.offset += align_offset;
 				}
 
 
 				size_t array_off = 0;
 				for (size_t i = 0; i < entry.count; i++) {
-					memcpy(new_mem_arr + new_offset + array_off, mem_arr + old_offset + array_off, 4);
+					memcpy(new_mem_arr + entry.offset + array_off, mem_arr + old_offset + array_off, 4);
 					array_off += 4;
 				}
 			}
 			else if (entry.type == 3) { // INT16
-				auto aligned = alignTo2Bytes(header_data_off + new_offset) - header_data_off;
-				if (aligned > new_offset) {
-					printf("[LAST OFFSET] = [%lld] [ALLIGNED OFFSET] = [%u]\n", new_offset, aligned);
-					align_offset += aligned - new_offset;
-					new_offset += align_offset;
+				auto aligned = alignTo2Bytes(header_data_off + entry.offset) - header_data_off;
+				if (aligned > entry.offset) {
+					printf("[LAST OFFSET] = [%lld] [ALLIGNED OFFSET] = [%u]\n", entry.offset, aligned);
+					align_offset += aligned - entry.offset;
+					entry.offset += align_offset;
 				}
 
 
 				size_t array_off = 0;
 				for (size_t i = 0; i < entry.count; i++) {
-					memcpy(new_mem_arr + new_offset + array_off, mem_arr + old_offset + array_off, 2);
+					memcpy(new_mem_arr + entry.offset + array_off, mem_arr + old_offset + array_off, 2);
 					array_off += 2;
 				}
 			}
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
 
 		entry.tag = _byteswap_ulong(entry.tag);
 		entry.type = _byteswap_ulong(entry.type);
-		entry.offset = _byteswap_ulong(new_offset);
+		entry.offset = _byteswap_ulong(entry.offset);
 		entry.count = _byteswap_ulong(entry.count);
 		test_header_file.write((char*)&entry, sizeof(entry));
 
