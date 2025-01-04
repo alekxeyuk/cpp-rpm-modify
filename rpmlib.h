@@ -61,7 +61,6 @@ struct RPMHeader {
 	uint32_t count;          // Number of index entries
 	uint32_t data_size;      // Size of data store
 	std::vector<RPMIndexEntry> index_entries; // Index entries
-	std::vector<uint8_t> data_store;         // Data store
 
 	void print() const {
 		printf("Head Magic: %X\n", magic);
@@ -84,6 +83,12 @@ struct RPMHeader {
 
 	bool is_correct() const {
 		return magic == header_magic;
+	}
+
+	void byte_swap() {
+		magic = _byteswap_ulong(magic);
+		count = _byteswap_ulong(count);
+		data_size = _byteswap_ulong(data_size);
 	}
 };
 

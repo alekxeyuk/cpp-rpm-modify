@@ -32,9 +32,7 @@ static RPMHeader read_header(fstream& file) {
 	RPMHeader head;
 	file.read(reinterpret_cast<char*>(&head), 16);
 
-	head.magic = _byteswap_ulong(head.magic);
-	head.count = _byteswap_ulong(head.count);
-	head.data_size = _byteswap_ulong(head.data_size);
+	head.byte_swap();
 
 	head.index_entries.resize(head.count);
 	file.read(reinterpret_cast<char*>(head.index_entries.data()), sizeof(RPMIndexEntry) * head.count);
@@ -231,9 +229,8 @@ int main(int argc, char* argv[]) {
 
 
 	file.seekp(header_index_off, ios::beg);
-	head.magic = _byteswap_ulong(head.magic);
-	head.count = _byteswap_ulong(head.count);
-	head.data_size = _byteswap_ulong(new_data_size + align_offset);
+	head.data_size = new_data_size + align_offset;
+	head.byte_swap();
 	file.write(reinterpret_cast<char*>(&head), 16);
 
 
