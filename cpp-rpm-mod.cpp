@@ -5,17 +5,15 @@
 
 using namespace std;
 
-static uint32_t alignTo8Bytes(uint32_t offset) {
-	return (offset + 7) & ~7;
+// Helper functions for alignment
+static uint32_t alignTo(uint32_t offset, uint32_t alignment) {
+	return (offset + alignment - 1) & ~(alignment - 1);
 }
 
-static uint32_t alignTo4Bytes(uint32_t offset) {
-	return (offset + 3) & ~3;
-}
-
-static uint32_t alignTo2Bytes(uint32_t offset) {
-	return (offset + 1) & ~1;
-}
+// Simplified alignment functions
+static uint32_t alignTo8Bytes(uint32_t offset) { return alignTo(offset, 8); }
+static uint32_t alignTo4Bytes(uint32_t offset) { return alignTo(offset, 4); }
+static uint32_t alignTo2Bytes(uint32_t offset) { return alignTo(offset, 2); }
 
 static RPMLead read_lead(fstream& file) {
 	RPMLead lead;
