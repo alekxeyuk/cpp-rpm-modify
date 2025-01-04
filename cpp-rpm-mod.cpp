@@ -36,15 +36,14 @@ static RPMHeader read_header(fstream& file) {
 	head.count = _byteswap_ulong(head.count);
 	head.data_size = _byteswap_ulong(head.data_size);
 
-	for (size_t i = 0; i < head.count; i++)
-	{
-		RPMIndexEntry entry;
-		file.read(reinterpret_cast<char*>(&entry), sizeof(RPMIndexEntry));
+	head.index_entries.resize(head.count);
+	file.read(reinterpret_cast<char*>(head.index_entries.data()), sizeof(RPMIndexEntry) * head.count);
+
+	for (auto& entry : head.index_entries) {
 		entry.tag = _byteswap_ulong(entry.tag);
 		entry.type = _byteswap_ulong(entry.type);
 		entry.offset = _byteswap_ulong(entry.offset);
 		entry.count = _byteswap_ulong(entry.count);
-		head.index_entries.push_back(entry);
 	}
 
 	return head;
