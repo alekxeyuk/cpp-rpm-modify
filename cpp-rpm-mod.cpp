@@ -52,12 +52,6 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	uint32_t offset = 4500;
-	uint32_t aligned_offset = alignTo8Bytes(offset);
-
-	cout << "Original offset: " << offset << std::endl;
-	cout << "Aligned offset: " << aligned_offset << std::endl;
-
 	fstream file(argv[1], ios::in | ios::out | ios::binary);
 	if (!file.is_open()) {
 		cout << "Cant open file\n";
@@ -120,9 +114,7 @@ int main(int argc, char* argv[]) {
 	file.read(data_mem_arr, rpm_data_size);
 
 	string old_vendor;
-	size_t old_vendor_size = 0;
 	string old_packager;
-	size_t old_packager_size = 0;
 
 	string new_vendor(argv[2]);
 	size_t new_vendor_size = new_vendor.size();
@@ -132,34 +124,25 @@ int main(int argc, char* argv[]) {
 	for (auto& tag : head.index_entries) {
 		if (tag.tag == 1011) {
 			old_vendor = mem_arr + tag.offset;
-			old_vendor_size = old_vendor.size();
-			printf("[Old Vendor] [%d at %d] = [%s] [%lld]\n", tag.tag, tag.offset, old_vendor.c_str(), old_vendor_size);
+			printf("[Old Vendor] [%d at %d] = [%s] [%lld]\n", tag.tag, tag.offset, old_vendor.c_str(), old_vendor.size());
 		}
 		if (tag.tag == 1015) {
 			old_packager = mem_arr + tag.offset;
-			old_packager_size = old_packager.size();
-			printf("[Old Packager] [%d at %d] = [%s] [%lld]\n", tag.tag, tag.offset, old_packager.c_str(), old_packager_size);
+			printf("[Old Packager] [%d at %d] = [%s] [%lld]\n", tag.tag, tag.offset, old_packager.c_str(), old_packager.size());
 		}
 	}
 
-	int off_delta_vendor = ((int)new_vendor_size) - old_vendor_size;
-	int off_delta_packager = ((int)new_packager_size) - old_packager_size;
+	int off_delta_vendor = ((int)new_vendor_size) - old_vendor.size();
+	int off_delta_packager = ((int)new_packager_size) - old_packager.size();
 	printf("off_delta_vendor[%d] off_delta_packager[%d]\n", off_delta_vendor, off_delta_packager);
 
-	//fstream test_header_file("test_header.bin", ios::out | ios::binary);
-	auto& test_header_file = file;
-	test_header_file.seekp(header_index_off, ios::beg);
-	/*if (!test_header_file.is_open()) {
-		cout << "Cant open file\n";
-		test_header_file.close();
-		return EXIT_FAILURE;
-	}*/
+	file.seekp(header_index_off, ios::beg);
 
 	size_t new_data_size = head.data_size + (off_delta_vendor + off_delta_packager);
 	auto new_mem_arr = new char[new_data_size * 2]();
 
 
-	test_header_file.write("XXXXXXXXXXXXXXX", 16);
+	file.write("XXXXXXXXXXXXXXX", 16);
 	const char* temp_im_63[16];
 	RPMIndexEntry temp_im_63_entry;
 
@@ -180,7 +163,6 @@ int main(int argc, char* argv[]) {
 			entry.offset += off_delta_vendor + off_delta_packager;
 			memcpy(temp_im_63, mem_arr + old_offset, entry.count);
 			temp_im_63_entry = entry;
-			/*continue;*/
 		}
 
 
@@ -239,28 +221,27 @@ int main(int argc, char* argv[]) {
 
 
 		entry.byte_swap();
-		test_header_file.write((char*)&entry, sizeof(entry));
+		file.write((char*)&entry, sizeof(entry));
 
 		counter++;
 	}
 	memcpy(new_mem_arr + temp_im_63_entry.offset + align_offset, temp_im_63, 16);
-	test_header_file.write(new_mem_arr, new_data_size + align_offset);
-	test_header_file.write(data_mem_arr, rpm_data_size);
+	file.write(new_mem_arr, new_data_size + align_offset);
+	file.write(data_mem_arr, rpm_data_size);
 
 
-	test_header_file.seekp(header_index_off, ios::beg);
+	file.seekp(header_index_off, ios::beg);
 	head.magic = _byteswap_ulong(head.magic);
 	head.count = _byteswap_ulong(head.count);
 	head.data_size = _byteswap_ulong(new_data_size + align_offset);
-	test_header_file.write(reinterpret_cast<char*>(&head), 16);
+	file.write(reinterpret_cast<char*>(&head), 16);
 
 
 	temp_im_63_entry.offset += align_offset;
 	temp_im_63_entry.byte_swap();
-	test_header_file.write((char*)&temp_im_63_entry, sizeof(temp_im_63_entry));
+	file.write((char*)&temp_im_63_entry, sizeof(temp_im_63_entry));
 
 	file.close();
-	test_header_file.close();
 	delete[] mem_arr;
 	delete[] data_mem_arr;
 	delete[] new_mem_arr;
