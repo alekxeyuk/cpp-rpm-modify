@@ -46,6 +46,13 @@ struct RPMIndexEntry {
 	uint32_t type;           // Data type
 	uint32_t offset;         // Offset to data
 	uint32_t count;          // Number of items
+
+	void byte_swap() {
+		tag = _byteswap_ulong(tag);
+		type = _byteswap_ulong(type);
+		offset = _byteswap_ulong(offset);
+		count = _byteswap_ulong(count);
+	}
 };
 
 struct RPMHeader {
