@@ -40,10 +40,7 @@ static RPMHeader read_header(fstream& file) {
 	file.read(reinterpret_cast<char*>(head.index_entries.data()), sizeof(RPMIndexEntry) * head.count);
 
 	for (auto& entry : head.index_entries) {
-		entry.tag = _byteswap_ulong(entry.tag);
-		entry.type = _byteswap_ulong(entry.type);
-		entry.offset = _byteswap_ulong(entry.offset);
-		entry.count = _byteswap_ulong(entry.count);
+		entry.byte_swap();
 	}
 
 	return head;
@@ -241,10 +238,7 @@ int main(int argc, char* argv[]) {
 		}
 
 
-		entry.tag = _byteswap_ulong(entry.tag);
-		entry.type = _byteswap_ulong(entry.type);
-		entry.offset = _byteswap_ulong(entry.offset);
-		entry.count = _byteswap_ulong(entry.count);
+		entry.byte_swap();
 		test_header_file.write((char*)&entry, sizeof(entry));
 
 		counter++;
@@ -260,10 +254,9 @@ int main(int argc, char* argv[]) {
 	head.data_size = _byteswap_ulong(new_data_size + align_offset);
 	test_header_file.write(reinterpret_cast<char*>(&head), 16);
 
-	temp_im_63_entry.tag = _byteswap_ulong(temp_im_63_entry.tag);
-	temp_im_63_entry.type = _byteswap_ulong(temp_im_63_entry.type);
-	temp_im_63_entry.offset = _byteswap_ulong(temp_im_63_entry.offset + align_offset);
-	temp_im_63_entry.count = _byteswap_ulong(temp_im_63_entry.count);
+
+	temp_im_63_entry.offset += align_offset;
+	temp_im_63_entry.byte_swap();
 	test_header_file.write((char*)&temp_im_63_entry, sizeof(temp_im_63_entry));
 
 	file.close();
